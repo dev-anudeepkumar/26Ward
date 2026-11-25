@@ -655,6 +655,7 @@
         // ==========================================
         // 5. MULTIPLAYER SYNC (Firebase) with local fallback
         // ==========================================
+        let rosterReady = false;
         async function initMultiplayer() {
             renderColorSwatches();
             updateUserModeUI();
@@ -671,7 +672,10 @@
 
                 const app = fb.initializeApp(firebaseConfig);
                 auth = fb.getAuth(app);
-                db = fb.getFirestore(app);
+                // Auto-detect long-polling: streaming/WebSocket listeners are often blocked inside
+                // iframes and proxies, which makes snapshots silently stop arriving for other users.
+                try { db = fb.initializeFirestore(app, { experimentalAutoDetectLongPolling: true }); }
+                catch (_) { db = fb.getFirestore(app); }
 
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await fb.signInWithCustomToken(auth, __initial_auth_token);
@@ -683,18 +687,30 @@
                 setConnectionBadge('live', 'Live Sync');
 
                 fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'public', 'data', 'grid_users'), (snapshot) => {
+                    let rosterChanged = false;
                     snapshot.docChanges().forEach((change) => {
                         if (change.type === 'removed') {
                             state.users.delete(change.doc.id);
                             if (state.selectedProfileId === change.doc.id) state.selectedProfileId = DEFAULT_USERS[0].id;
+                            rosterChanged = true;
                         } else {
                             const data = change.doc.data();
+                            const isNew = !state.users.has(change.doc.id);
                             state.users.set(change.doc.id, { id: change.doc.id, name: data.name || 'User', color: data.color || '#2563eb', isDefault: Boolean(data.isDefault) });
+                            rosterChanged = true;
+                            if (isNew && rosterReady && change.doc.id !== state.selectedProfileId && !snapshot.metadata.hasPendingWrites) {
+                                showToast(`🙋 ${data.name || 'A new player'} joined the game`, 'info');
+                            }
                         }
                     });
-                    loadProfileChoice();
-                    updateUserModeUI();
-                }, (err) => console.error('User roster sync error:', err));
+                    // Restore this browser's saved profile only until the roster has first loaded
+                    if (!rosterReady) { loadProfileChoice(); rosterReady = true; }
+                    if (rosterChanged) refreshEverything();
+                }, (err) => {
+                    console.error('User roster sync error:', err);
+                    setConnectionBadge('error', 'Player sync error');
+                    showToast('Player list is not syncing. Check Firestore rules/connection.', 'error');
+                });
 
                 fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'public', 'data', 'claimed_tiles'), (snapshot) => {
                     const changed = new Set();
