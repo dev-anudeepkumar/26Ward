@@ -1,53 +1,111 @@
-<!-- ... existing code ... -->
-                    <!-- User Profile & Admin Toggle -->
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <!-- User Mode Selector Button -->
-                        <button id="userModeBtn" type="button"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 transition-all shadow-xs"
-                            title="Switch User Profile (User Mode)">
-                            <span id="activeUserAvatar" class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">A</span>
-                            <span id="activeUserName" class="max-w-[90px] sm:max-w-[120px] truncate">Select User</span>
-                            <span id="activeUserBadgeCount" class="px-1.5 py-0.2 rounded-md bg-white border border-slate-200 text-[10px] font-mono text-slate-600">0</span>
-                            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                            </svg>
-                        </button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tile Party – Claim Your Number</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.4"></script>
+    <style>
+        body { background: radial-gradient(1200px 500px at 10% -10%, #dbeafe 0%, transparent 60%), radial-gradient(900px 400px at 100% 0%, #fce7f3 0%, transparent 55%), #f8fafc; background-attachment: fixed; }
 
-                        <!-- Admin Mode Toggle -->
-                        <button id="adminToggleBtn" type="button"
-<!-- ... existing code ... -->
-                <!-- Filter Tabs & Visibility Switch -->
-                <div class="flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
-                    <!-- Filter Segmented Control -->
-                    <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 overflow-x-auto max-w-full" role="tablist">
-                        <button type="button" data-filter="all" class="filter-tab px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition-all shrink-0">
-                            All <span class="text-slate-400 font-mono ml-0.5">(1695)</span>
-                        </button>
-                        <button type="button" data-filter="available" class="filter-tab px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">
-                            Available <span id="tabAvailCount" class="text-emerald-600 font-mono ml-0.5">(1695)</span>
-                        </button>
-                        <button type="button" data-filter="mine" class="filter-tab px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">
-                            My Tiles <span id="tabMineCount" class="text-blue-600 font-mono ml-0.5">(0)</span>
-                        </button>
-                        <button type="button" data-filter="claimed" class="filter-tab px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">
-                            Claimed <span id="tabClaimedCount" class="text-slate-500 font-mono ml-0.5">(0)</span>
-                        </button>
-                    </div>
+        /* ---------- Tiles ---------- */
+        #tileGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+        #tileGrid.hidden { display: none; }
+        .tile {
+            position: relative; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 14px; border: 1.5px solid #e2e8f0; background: #fff; color: #334155;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 13px; line-height: 1.1;
+            cursor: pointer; user-select: none; overflow: hidden;
+            transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+        }
+        .tile.hidden { display: none; }
+        .tile-available:hover { transform: translateY(-2px) scale(1.1); border-color: #60a5fa; background: #eff6ff; color: #1d4ed8; box-shadow: 0 8px 18px -6px rgb(37 99 235 / .45); z-index: 2; }
+        .tile-available:active { transform: scale(.92); }
+        .tile:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+        .tile-claimed { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+        .tile-claimed-mine { background: linear-gradient(135deg, #eff6ff, #ede9fe); border-color: #818cf8 !important; color: #4338ca; cursor: not-allowed; box-shadow: inset 0 0 0 1px #c7d2fe; }
+        body.admin-active .tile-claimed, body.admin-active .tile-claimed-mine { cursor: pointer; }
+        body.admin-active .tile-claimed:hover, body.admin-active .tile-claimed-mine:hover { border-color: #fb7185 !important; background: #fff1f2; color: #be123c; transform: scale(1.06); }
 
-                    <!-- Toggle: Hide Claimed Tiles vs Show Disabled -->
-<!-- ... existing code ... -->
-            <!-- Left Column: Stats & Tile Grid -->
+        @keyframes tile-pop { 0%{transform:scale(1)} 40%{transform:scale(1.4) rotate(-5deg)} 70%{transform:scale(.94) rotate(2deg)} 100%{transform:scale(1)} }
+        @keyframes tile-flash { 0%,100%{box-shadow:0 0 0 0 rgb(251 191 36 / 0)} 25%,75%{box-shadow:0 0 0 6px rgb(251 191 36 / .7); transform: scale(1.15)} 50%{box-shadow:0 0 0 10px rgb(251 191 36 / .25)} }
+        @keyframes avatar-bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-6px) scale(1.18)} }
+        @keyframes slide-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+        @keyframes toast-in { from{opacity:0;transform:translateY(12px) scale(.96)} to{opacity:1;transform:none} }
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.35} }
+        .tile-pop { animation: tile-pop .5s cubic-bezier(.34,1.56,.64,1); z-index: 5; }
+        .tile-flash { animation: tile-flash 1.4s ease; z-index: 5; }
+        .avatar-bounce { animation: avatar-bounce .5s ease; }
+        .feed-item { animation: slide-in .25s ease both; }
+        .toast { animation: toast-in .25s ease both; }
+        .live-dot { animation: pulse-dot 1.6s infinite; }
+        .confetti-bit { position: fixed; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; z-index: 100; }
+        @media (prefers-reduced-motion: reduce) {
+            .tile-pop, .tile-flash, .avatar-bounce, .feed-item, .toast, .live-dot { animation: none; }
+            .tile, .tile-available:hover { transition: none; transform: none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased">
+
+    <!-- ================= HEADER ================= -->
+    <header class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-violet-500 to-pink-500 text-white text-xl flex items-center justify-center shadow-lg shrink-0">🎯</div>
+                <div class="min-w-0">
+                    <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 leading-tight">Tile Party</h1>
+                    <p class="text-[11px] sm:text-xs text-slate-500 truncate">Grab your lucky number · 1,695 tiles up for grabs</p>
+                </div>
+                <span id="connectionStatus" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Connecting…
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="userModeBtn" type="button"
+                    class="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-slate-200 bg-white hover:border-blue-300 hover:shadow-md text-slate-800 transition-all"
+                    title="Switch player">
+                    <span id="activeUserAvatar" class="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center shrink-0 ring-2 ring-white shadow">A</span>
+                    <span class="flex flex-col items-start leading-tight">
+                        <span class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Playing as</span>
+                        <span id="activeUserName" class="max-w-[90px] sm:max-w-[120px] truncate">Select User</span>
+                    </span>
+                    <span id="activeUserBadgeCount" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-mono font-bold">🏆 0</span>
+                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                </button>
+
+                <button id="adminToggleBtn" type="button"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-all"
+                    title="Admin tools: unlock tiles, remove users, reset the board">
+                    <span>🛠️</span><span id="adminBtnLabel">Admin</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin bar -->
+        <div id="adminBar" class="hidden border-t border-rose-200 bg-rose-50">
+            <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-rose-700">
+                <span class="font-semibold">🛠️ Admin mode — click any claimed tile to unlock it.</span>
+                <button id="resetAllBtn" type="button" class="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold shadow-sm transition-all">💣 Reset entire board</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-5">
+        <div class="flex flex-col lg:flex-row gap-5 items-start">
+
+            <!-- ================= LEFT: stats + grid ================= -->
             <div class="flex-1 w-full min-w-0">
-                <!-- Live Stats Overview Cards -->
+
+                <!-- Stats -->
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-                        <div class="text-xs font-medium text-slate-500">Total Tiles</div>
+                        <div class="text-xs font-medium text-slate-500">🎲 Total Tiles</div>
                         <div class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-0.5">1,695</div>
                     </div>
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-                        <div class="text-xs font-medium text-emerald-600 flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available
-                        </div>
+                        <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available</div>
                         <div id="statAvailable" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-0.5">1,695</div>
                     </div>
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
@@ -58,95 +116,152 @@
                         <div id="statMine" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-0.5">0</div>
                     </div>
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-                        <div class="text-xs font-medium text-slate-500 flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-slate-400"></span> Claimed
-                        </div>
+                        <div class="text-xs font-medium text-slate-500 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span> Taken</div>
                         <div id="statClaimed" class="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-0.5">0</div>
                     </div>
                     <div class="col-span-2 sm:col-span-1 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
                         <div class="flex items-center justify-between text-xs font-medium text-blue-600">
-                            <span>Completed</span>
+                            <span>🚀 Progress</span>
                             <span id="statPercent" class="font-mono font-bold">0.0%</span>
                         </div>
                         <div class="w-full bg-slate-100 rounded-full h-2.5 mt-2.5 overflow-hidden">
-                            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            <div id="progressBar" class="bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500 h-2.5 rounded-full transition-all duration-500" style="width:0%"></div>
                         </div>
+                        <div id="progressMsg" class="mt-2 text-[11px] text-slate-500">Pick a number to get started!</div>
                     </div>
                 </div>
 
-                <!-- Grid Header Info -->
-<!-- ... existing code ... -->
+                <!-- Toolbar -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-4 mb-4 space-y-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative flex-1 min-w-[180px]">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                            <input id="searchInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Search or type a number…"
+                                class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                            <button id="clearSearchBtn" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 text-xs" aria-label="Clear search">✕</button>
+                        </div>
+                        <button id="jumpBtn" type="button" class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 active:scale-95 text-white text-xs sm:text-sm font-semibold transition-all" title="Scroll to the exact tile number">Jump ➜</button>
+                        <button id="surpriseBtn" type="button" class="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-pink-500 hover:brightness-105 active:scale-95 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all" title="Jump to a random open tile">🎲 Surprise me</button>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                        <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 overflow-x-auto max-w-full" role="tablist">
+                            <button type="button" data-filter="all" class="filter-tab px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 shadow-sm transition-all shrink-0">🎲 All <span class="text-slate-400 font-mono ml-0.5">(1695)</span></button>
+                            <button type="button" data-filter="available" class="filter-tab px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">✨ Open <span id="tabAvailCount" class="text-emerald-600 font-mono ml-0.5">(1695)</span></button>
+                            <button type="button" data-filter="mine" class="filter-tab px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">⭐ Mine <span id="tabMineCount" class="text-blue-600 font-mono ml-0.5">(0)</span></button>
+                            <button type="button" data-filter="claimed" class="filter-tab px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all shrink-0">🔒 Taken <span id="tabClaimedCount" class="text-slate-500 font-mono ml-0.5">(0)</span></button>
+                        </div>
+
+                        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
+                            <input id="hideClaimedToggle" type="checkbox" class="w-4 h-4 rounded accent-blue-600">
+                            🙈 Hide taken tiles
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Grid header -->
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <p id="gridStatusText" class="text-xs text-slate-500">Loading tiles…</p>
+                    <p class="text-[11px] text-slate-400 hidden sm:block">Tap an open tile to make it yours</p>
+                </div>
+
+                <!-- Grid -->
+                <div class="bg-white/70 rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-4">
+                    <div id="tileGrid"></div>
+                    <div id="emptyState" class="hidden text-center py-14">
+                        <div class="text-5xl mb-3">🕵️</div>
+                        <p class="text-sm font-bold text-slate-700">No tiles match that view</p>
+                        <p class="text-xs text-slate-500 mt-1">Try a different search or filter.</p>
+                        <button id="resetFiltersBtn" type="button" class="mt-4 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold transition-all">Reset filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= RIGHT: sidebar ================= -->
+            <aside class="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-24">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-slate-900">📣 Live Feed</h2>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600"><span class="live-dot w-1.5 h-1.5 rounded-full bg-emerald-500"></span> real-time</span>
+                    </div>
+                    <div id="activityFeed" class="p-3 space-y-2 max-h-[420px] overflow-y-auto"></div>
                     <div class="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
                         <span>Active Mode:</span>
                         <span id="sessionUidDisplay" class="font-semibold text-slate-700 truncate max-w-[180px]">User Mode</span>
                     </div>
                 </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-pink-50 rounded-2xl border border-slate-200 p-4 text-xs text-slate-600 space-y-2">
+                    <h3 class="text-sm font-bold text-slate-900">🎮 How to play</h3>
+                    <p><b>1.</b> Pick who you are (top right).</p>
+                    <p><b>2.</b> Tap any open tile to claim it.</p>
+                    <p><b>3.</b> Use <b>Jump</b> or <b>Surprise me</b> to find a number fast.</p>
+                </div>
             </aside>
         </div>
     </main>
 
-    <!-- User Mode Modal (Select, Switch & Create Users) -->
-    <div id="userModeModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+    <!-- ================= USER MODAL ================= -->
+    <div id="userModeModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
+                    <div class="w-10 h-10 rounded-2xl bg-blue-50 text-xl flex items-center justify-center">🎮</div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">User Mode — Select Profile</h3>
-                        <p class="text-xs text-slate-500">Choose who you are claiming tiles as</p>
+                        <h3 class="text-base font-bold text-slate-900">Who's playing?</h3>
+                        <p class="text-xs text-slate-500">Tap your avatar to start claiming tiles</p>
                     </div>
                 </div>
-                <button id="closeUserModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                <button id="closeUserModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
-            <!-- User Roster List -->
-            <div id="userRosterList" class="py-3 overflow-y-auto space-y-2 flex-1 min-h-[160px]">
-                <!-- Dynamically populated user cards -->
-            </div>
+            <div id="userRosterList" class="py-3 overflow-y-auto space-y-2 flex-1 min-h-[160px]"></div>
 
-            <!-- Add New User Form -->
             <form id="addUserForm" class="pt-3 border-t border-slate-100 space-y-3">
                 <div class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>+ Add New User to Roster</span>
-                    <span class="text-[11px] font-normal text-slate-400">Synced live</span>
+                    <span>➕ Join the game</span>
+                    <span class="text-[11px] font-normal text-slate-400">Shared with everyone</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="newUserNameInput" maxlength="20" placeholder="Enter user name..." required
-                        class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none">
-                    <button type="submit"
-                        class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors shrink-0">
-                        Add & Select
-                    </button>
+                    <span id="newUserPreview" class="w-9 h-9 rounded-full text-white font-bold flex items-center justify-center shrink-0 shadow transition-colors" style="background:#2563eb">?</span>
+                    <input type="text" id="newUserNameInput" maxlength="20" placeholder="Your name…" required autocomplete="off"
+                        class="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none">
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold shadow-sm transition-all shrink-0">Let's go →</button>
                 </div>
-                <!-- Color Picker Swatches -->
-                <div id="colorSwatches" class="flex items-center gap-2 flex-wrap">
-                    <!-- Populated via JS -->
-                </div>
+                <div id="colorSwatches" class="flex items-center gap-2 flex-wrap"></div>
             </form>
         </div>
     </div>
 
-    <!-- Custom Modal for Confirmation (Never uses browser alert/confirm) -->
-<!-- ... existing code ... -->
+    <!-- ================= CONFIRM MODAL ================= -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center">
+            <div id="modalIconContainer" class="w-14 h-14 mx-auto rounded-2xl bg-rose-50 text-3xl flex items-center justify-center">⚠️</div>
+            <h3 id="modalTitle" class="mt-3 text-base font-bold text-slate-900">Are you sure?</h3>
+            <p id="modalMessage" class="mt-1 text-sm text-slate-500"></p>
+            <div class="mt-5 flex items-center justify-center gap-2">
+                <button id="modalCancelBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">Cancel</button>
+                <button id="modalConfirmBtn" type="button" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-semibold transition-all">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toastContainer" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex flex-col items-center gap-2 w-[92vw] max-w-sm pointer-events-none" aria-live="polite"></div>
+
+    <script type="module">
         // ==========================================
-        // 1. CONFIGURATION & STATE MANAGEMENT
+        // 1. CONFIGURATION & STATE
         // ==========================================
         const TOTAL_TILES = 1695;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tile-grid-1695-default';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const LOCAL_KEY = 'tileparty.local.v1';
+        const PROFILE_KEY = 'tileparty.profile.v1';
 
-        const AVATAR_COLORS = [
-            '#2563eb', '#059669', '#7c3aed', '#db2777',
-            '#d97706', '#0891b2', '#dc2626', '#4f46e5'
-        ];
+        const AVATAR_COLORS = ['#2563eb', '#059669', '#7c3aed', '#db2777', '#d97706', '#0891b2', '#dc2626', '#4f46e5'];
 
         const DEFAULT_USERS = [
             { id: 'user_alex', name: 'Alex', color: '#2563eb', isDefault: true },
@@ -156,127 +271,233 @@
             { id: 'user_priya', name: 'Priya', color: '#d97706', isDefault: true }
         ];
 
-        let db = null;
-        let auth = null;
-        let currentUser = null;
-        let isOfflineFallback = false;
+        let db = null, auth = null, currentUser = null, isOfflineFallback = false, fb = null;
 
-        // Application State
         const state = {
-            claimedTiles: new Map(), // tileId (number) -> { profileId, nickname, color, claimedAtMs }
-            users: new Map(),        // profileId -> { id, name, color, isDefault }
+            claimedTiles: new Map(),
+            users: new Map(),
             selectedProfileId: 'user_alex',
             selectedNewColor: AVATAR_COLORS[0],
-            filter: 'all',           // 'all' | 'available' | 'mine' | 'claimed'
+            filter: 'all',
             searchQuery: '',
             hideClaimed: false,
             adminMode: false,
             initialSyncComplete: false
         };
-
-        // Initialize starter roster in memory
         DEFAULT_USERS.forEach(u => state.users.set(u.id, u));
 
-        // Cache DOM References for O(1) fast updates across 1,695 elements
+        const $ = (id) => document.getElementById(id);
         const tileElements = new Array(TOTAL_TILES + 1);
         const dom = {
-            tileGrid: document.getElementById('tileGrid'),
-            searchInput: document.getElementById('searchInput'),
-            clearSearchBtn: document.getElementById('clearSearchBtn'),
-            jumpBtn: document.getElementById('jumpBtn'),
-            hideClaimedToggle: document.getElementById('hideClaimedToggle'),
+            tileGrid: $('tileGrid'), searchInput: $('searchInput'), clearSearchBtn: $('clearSearchBtn'),
+            jumpBtn: $('jumpBtn'), surpriseBtn: $('surpriseBtn'), hideClaimedToggle: $('hideClaimedToggle'),
             filterTabs: document.querySelectorAll('.filter-tab'),
-            userModeBtn: document.getElementById('userModeBtn'),
-            activeUserAvatar: document.getElementById('activeUserAvatar'),
-            activeUserName: document.getElementById('activeUserName'),
-            activeUserBadgeCount: document.getElementById('activeUserBadgeCount'),
-            userModeModal: document.getElementById('userModeModal'),
-            closeUserModalBtn: document.getElementById('closeUserModalBtn'),
-            userRosterList: document.getElementById('userRosterList'),
-            addUserForm: document.getElementById('addUserForm'),
-            newUserNameInput: document.getElementById('newUserNameInput'),
-            colorSwatches: document.getElementById('colorSwatches'),
-            adminToggleBtn: document.getElementById('adminToggleBtn'),
-            adminBtnLabel: document.getElementById('adminBtnLabel'),
-            adminBar: document.getElementById('adminBar'),
-            resetAllBtn: document.getElementById('resetAllBtn'),
-            resetFiltersBtn: document.getElementById('resetFiltersBtn'),
-            emptyState: document.getElementById('emptyState'),
-            gridStatusText: document.getElementById('gridStatusText'),
-            statAvailable: document.getElementById('statAvailable'),
-            statMine: document.getElementById('statMine'),
-            statMyLabel: document.getElementById('statMyLabel'),
-            statMyDot: document.getElementById('statMyDot'),
-            statClaimed: document.getElementById('statClaimed'),
-            statPercent: document.getElementById('statPercent'),
-            progressBar: document.getElementById('progressBar'),
-            tabAvailCount: document.getElementById('tabAvailCount'),
-            tabMineCount: document.getElementById('tabMineCount'),
-            tabClaimedCount: document.getElementById('tabClaimedCount'),
-            activityFeed: document.getElementById('activityFeed'),
-            connectionStatus: document.getElementById('connectionStatus'),
-            sessionUidDisplay: document.getElementById('sessionUidDisplay'),
-            toastContainer: document.getElementById('toastContainer'),
-            confirmModal: document.getElementById('confirmModal'),
-            modalTitle: document.getElementById('modalTitle'),
-            modalMessage: document.getElementById('modalMessage'),
-            modalConfirmBtn: document.getElementById('modalConfirmBtn'),
-            modalCancelBtn: document.getElementById('modalCancelBtn'),
-            modalIconContainer: document.getElementById('modalIconContainer')
+            userModeBtn: $('userModeBtn'), activeUserAvatar: $('activeUserAvatar'), activeUserName: $('activeUserName'),
+            activeUserBadgeCount: $('activeUserBadgeCount'), userModeModal: $('userModeModal'),
+            closeUserModalBtn: $('closeUserModalBtn'), userRosterList: $('userRosterList'), addUserForm: $('addUserForm'),
+            newUserNameInput: $('newUserNameInput'), newUserPreview: $('newUserPreview'), colorSwatches: $('colorSwatches'),
+            adminToggleBtn: $('adminToggleBtn'), adminBtnLabel: $('adminBtnLabel'), adminBar: $('adminBar'),
+            resetAllBtn: $('resetAllBtn'), resetFiltersBtn: $('resetFiltersBtn'), emptyState: $('emptyState'),
+            gridStatusText: $('gridStatusText'), statAvailable: $('statAvailable'), statMine: $('statMine'),
+            statMyLabel: $('statMyLabel'), statMyDot: $('statMyDot'), statClaimed: $('statClaimed'),
+            statPercent: $('statPercent'), progressBar: $('progressBar'), progressMsg: $('progressMsg'),
+            tabAvailCount: $('tabAvailCount'), tabMineCount: $('tabMineCount'), tabClaimedCount: $('tabClaimedCount'),
+            activityFeed: $('activityFeed'), connectionStatus: $('connectionStatus'), sessionUidDisplay: $('sessionUidDisplay'),
+            toastContainer: $('toastContainer'), confirmModal: $('confirmModal'), modalTitle: $('modalTitle'),
+            modalMessage: $('modalMessage'), modalConfirmBtn: $('modalConfirmBtn'), modalCancelBtn: $('modalCancelBtn'),
+            modalIconContainer: $('modalIconContainer')
         };
 
-        function getActiveProfile() {
-            return state.users.get(state.selectedProfileId) || DEFAULT_USERS[0];
+        const getActiveProfile = () => state.users.get(state.selectedProfileId) || DEFAULT_USERS[0];
+
+        // ==========================================
+        // 2. HELPERS
+        // ==========================================
+        function escapeHtml(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function formatRelativeTime(ms) {
+            if (!ms) return '';
+            const s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+            if (s < 10) return 'just now';
+            if (s < 60) return `${s}s ago`;
+            if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+            if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+            return `${Math.floor(s / 86400)}d ago`;
+        }
+
+        function showToast(message, type = 'info') {
+            const styles = {
+                success: 'bg-emerald-600 text-white', error: 'bg-rose-600 text-white',
+                info: 'bg-slate-900 text-white', party: 'bg-gradient-to-r from-violet-600 to-pink-500 text-white'
+            };
+            const el = document.createElement('div');
+            el.className = `toast pointer-events-auto px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-xl text-center ${styles[type] || styles.info}`;
+            el.textContent = message;
+            dom.toastContainer.appendChild(el);
+            while (dom.toastContainer.children.length > 3) dom.toastContainer.firstChild.remove();
+            setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2600);
+        }
+
+        function setConnectionBadge(kind, label) {
+            const map = {
+                live: ['bg-emerald-50 text-emerald-700', 'bg-emerald-500 live-dot'],
+                offline: ['bg-amber-50 text-amber-700', 'bg-amber-500'],
+                error: ['bg-rose-50 text-rose-700', 'bg-rose-500']
+            };
+            const [wrap, dot] = map[kind] || map.offline;
+            dom.connectionStatus.className = `hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${wrap}`;
+            dom.connectionStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dot}"></span> ${escapeHtml(label)}`;
+        }
+
+        const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function burstConfetti(el, color, count = 14) {
+            if (REDUCED_MOTION || !el) return;
+            const r = el.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            const palette = [color, '#fbbf24', '#f472b6', '#34d399', '#60a5fa'];
+            for (let i = 0; i < count; i++) {
+                const bit = document.createElement('span');
+                bit.className = 'confetti-bit';
+                bit.style.background = palette[i % palette.length];
+                bit.style.left = cx + 'px';
+                bit.style.top = cy + 'px';
+                document.body.appendChild(bit);
+                const a = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+                const d = 30 + Math.random() * (count > 20 ? 110 : 40);
+                const anim = bit.animate([
+                    { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+                    { transform: `translate(${Math.cos(a) * d}px, ${Math.sin(a) * d + 20}px) rotate(${Math.random() * 540}deg)`, opacity: 0 }
+                ], { duration: 650 + Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)' });
+                anim.onfinish = () => bit.remove();
+            }
+        }
+
+        function animateTile(tileId, cls) {
+            const btn = tileElements[tileId];
+            if (!btn) return null;
+            btn.classList.remove(cls);
+            void btn.offsetWidth;
+            btn.classList.add(cls);
+            btn.addEventListener('animationend', () => btn.classList.remove(cls), { once: true });
+            return btn;
+        }
+
+        const CLAIM_CHEERS = ['Nice grab! 🎯', 'Got it! ✨', 'Locked in! 🔒', 'Boom! 💥', 'Yoink! 🦆', 'All yours! 🙌'];
+        const cheer = () => CLAIM_CHEERS[Math.floor(Math.random() * CLAIM_CHEERS.length)];
+
+        const MILESTONES = [
+            [100, '🏁 Every tile claimed. Legendary!'], [90, '🔥 So close. Only a few left!'],
+            [75, '💪 Three quarters done!'], [50, '🎉 Halfway there!'],
+            [25, '🌱 A quarter claimed. Nice pace!'], [0.01, '👏 Off to a great start!'], [0, 'Pick a number to get started!']
+        ];
+        function updateProgressMessage(claimedCount) {
+            const pct = (claimedCount / TOTAL_TILES) * 100;
+            dom.progressMsg.textContent = MILESTONES.find(([min]) => pct >= min)[1];
+        }
+
+        function showConfirm({ title, message, confirmText = 'Confirm', icon = '⚠️' }) {
+            return new Promise((resolve) => {
+                dom.modalTitle.textContent = title;
+                dom.modalMessage.textContent = message;
+                dom.modalConfirmBtn.textContent = confirmText;
+                dom.modalIconContainer.textContent = icon;
+                dom.confirmModal.classList.remove('hidden');
+                const done = (val) => {
+                    dom.confirmModal.classList.add('hidden');
+                    dom.modalConfirmBtn.removeEventListener('click', onYes);
+                    dom.modalCancelBtn.removeEventListener('click', onNo);
+                    dom.confirmModal.removeEventListener('click', onBackdrop);
+                    resolve(val);
+                };
+                const onYes = () => done(true);
+                const onNo = () => done(false);
+                const onBackdrop = (e) => { if (e.target === dom.confirmModal) done(false); };
+                dom.modalConfirmBtn.addEventListener('click', onYes);
+                dom.modalCancelBtn.addEventListener('click', onNo);
+                dom.confirmModal.addEventListener('click', onBackdrop);
+                dom.modalCancelBtn.focus();
+            });
+        }
+
+        // Local persistence (used only when there is no cloud database)
+        function saveLocal() {
+            if (!isOfflineFallback) return;
+            try {
+                localStorage.setItem(LOCAL_KEY, JSON.stringify({
+                    tiles: Array.from(state.claimedTiles.entries()),
+                    users: Array.from(state.users.values()).filter(u => !u.isDefault)
+                }));
+            } catch (_) { /* storage unavailable */ }
+        }
+        function loadLocal() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null');
+                if (!raw) return;
+                (raw.users || []).forEach(u => state.users.set(u.id, u));
+                (raw.tiles || []).forEach(([id, data]) => state.claimedTiles.set(id, data));
+            } catch (_) { /* ignore corrupt data */ }
+        }
+        function saveProfileChoice() { try { localStorage.setItem(PROFILE_KEY, state.selectedProfileId); } catch (_) {} }
+        function loadProfileChoice() {
+            try { const id = localStorage.getItem(PROFILE_KEY); if (id && state.users.has(id)) state.selectedProfileId = id; } catch (_) {}
         }
 
         // ==========================================
-        // 2. INITIALIZE 1,695 TILES IN DOM (ONCE)
+        // 3. BUILD GRID (ONCE)
         // ==========================================
         function buildTileGrid() {
-// ... existing code ...
+            const frag = document.createDocumentFragment();
+            for (let i = 1; i <= TOTAL_TILES; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'tile tile-available';
+                btn.dataset.tile = i;
+                tileElements[i] = btn;
+                frag.appendChild(btn);
+            }
+            dom.tileGrid.appendChild(frag);
+            for (let i = 1; i <= TOTAL_TILES; i++) updateSingleTileVisual(i);
+        }
+
         // ==========================================
-        // 3. UI RENDERING & FILTERING ENGINE
+        // 4. RENDERING
         // ==========================================
         function updateSingleTileVisual(tileId) {
             const btn = tileElements[tileId];
             if (!btn) return;
-
             const claimData = state.claimedTiles.get(tileId);
             const isClaimed = Boolean(claimData);
             const activeProfile = getActiveProfile();
             const isMine = isClaimed && claimData.profileId === activeProfile.id;
 
-            // Reset classes & inline color accents
             btn.classList.remove('tile-available', 'tile-claimed', 'tile-claimed-mine');
             btn.style.borderColor = '';
 
             if (isClaimed) {
                 btn.classList.add(isMine ? 'tile-claimed-mine' : 'tile-claimed');
-                if (claimData.color && !isMine) {
-                    btn.style.borderColor = claimData.color + '55';
-                }
-                btn.disabled = !state.adminMode;
-                btn.title = `Claimed by ${claimData.nickname || 'User'}${state.adminMode ? ' (Click to unlock)' : ''}`;
+                if (claimData.color && !isMine) btn.style.borderColor = claimData.color + '55';
+                btn.title = `Taken by ${claimData.nickname || 'someone'}${state.adminMode ? ' — click to unlock' : ''}`;
                 btn.setAttribute('aria-label', `Tile ${tileId}, claimed by ${claimData.nickname}`);
                 const dotColor = claimData.color || '#64748b';
                 btn.innerHTML = `
-                    <span class="line-through opacity-75 text-[11px] sm:text-xs">${tileId}</span>
-                    <span class="text-[9px] font-sans font-semibold truncate max-w-[92%] px-1 opacity-90 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${escapeHtml(dotColor)}"></span>
-                        ${isMine ? 'You' : escapeHtml(claimData.nickname || 'Locked')}
-                    </span>
-                `;
+                    <span class="line-through opacity-70 text-[11px] sm:text-xs">${tileId}</span>
+                    <span class="text-[9px] font-sans font-semibold truncate max-w-[92%] px-1 opacity-90 flex items-center gap-1 mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color:${escapeHtml(dotColor)}"></span>
+                        ${isMine ? 'You ⭐' : escapeHtml(claimData.nickname || 'Locked')}
+                    </span>`;
             } else {
                 btn.classList.add('tile-available');
-                btn.disabled = false;
-                btn.title = `Claim Tile #${tileId} as ${activeProfile.name}`;
+                btn.title = `Claim #${tileId} as ${activeProfile.name}`;
                 btn.setAttribute('aria-label', `Tile ${tileId}, available`);
                 btn.innerHTML = `<span>${tileId}</span>`;
             }
         }
 
         function refreshAllClaimedTileVisuals() {
-            state.claimedTiles.forEach((_, tileId) => updateSingleTileVisual(tileId));
+            state.claimedTiles.forEach((_, id) => updateSingleTileVisual(id));
         }
 
         function applyFiltersAndVisibility() {
@@ -291,58 +512,48 @@
                 const isMine = isClaimed && claimData.profileId === activeProfile.id;
                 let visible = true;
 
-                // 1. Search filter (matches substring of tile number)
-                if (query !== '' && !String(i).includes(query)) {
-                    visible = false;
-                }
-
-                // 2. Tab filter
+                if (query !== '' && !String(i).includes(query)) visible = false;
                 if (visible) {
                     if (state.filter === 'available' && isClaimed) visible = false;
                     if (state.filter === 'claimed' && !isClaimed) visible = false;
                     if (state.filter === 'mine' && !isMine) visible = false;
                 }
+                if (visible && state.hideClaimed && isClaimed && state.filter !== 'claimed' && state.filter !== 'mine') visible = false;
 
-                // 3. Hide Claimed toggle (applies unless viewing Claimed or My Tiles tab)
-                if (visible && state.hideClaimed && isClaimed && state.filter !== 'claimed' && state.filter !== 'mine') {
-                    visible = false;
-                }
-
-                if (visible) {
-                    if (btn.classList.contains('hidden')) btn.classList.remove('hidden');
-                    visibleCount++;
-                } else {
-                    if (!btn.classList.contains('hidden')) btn.classList.add('hidden');
-                }
+                btn.classList.toggle('hidden', !visible);
+                if (visible) visibleCount++;
             }
 
-            // Toggle empty state
-            if (visibleCount === 0) {
-                dom.emptyState.classList.remove('hidden');
-                dom.tileGrid.classList.add('hidden');
-            } else {
-                dom.emptyState.classList.add('hidden');
-                dom.tileGrid.classList.remove('hidden');
-            }
+            dom.emptyState.classList.toggle('hidden', visibleCount !== 0);
+            dom.tileGrid.classList.toggle('hidden', visibleCount === 0);
 
-            // Update grid status text
-            const filterLabels = {
-                all: 'all',
-                available: 'available',
-                mine: `${activeProfile.name}'s`,
-                claimed: 'claimed'
-            };
-            const filterLabel = filterLabels[state.filter] || state.filter;
+            const labels = { all: 'all', available: 'open', mine: `${activeProfile.name}'s`, claimed: 'taken' };
             dom.gridStatusText.textContent = query
-                ? `Showing ${visibleCount.toLocaleString()} matching tile(s) for "${query}"`
-                : `Showing ${visibleCount.toLocaleString()} ${filterLabel} tile(s)`;
+                ? `Showing ${visibleCount.toLocaleString()} tile(s) matching "${query}"`
+                : `Showing ${visibleCount.toLocaleString()} ${labels[state.filter] || state.filter} tile(s)`;
         }
 
+        function updateNewUserPreview() {
+            const n = dom.newUserNameInput.value.trim();
+            dom.newUserPreview.textContent = n ? n[0].toUpperCase() : '?';
+            dom.newUserPreview.style.backgroundColor = state.selectedNewColor;
+        }
+
+        function renderColorSwatches() {
+            dom.colorSwatches.innerHTML = AVATAR_COLORS.map(color => {
+                const sel = state.selectedNewColor === color;
+                return `<button type="button" data-color="${color}" aria-label="Select color ${color}" aria-pressed="${sel}"
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs transition-transform hover:scale-110 ${sel ? 'ring-2 ring-offset-2 ring-slate-800 scale-110' : ''}"
+                    style="background-color:${color}">${sel ? '✓' : ''}</button>`;
+            }).join('');
+            updateNewUserPreview();
+        }
+
+        let lastAvatarKey = '';
         function updateUserModeUI() {
             const activeProfile = getActiveProfile();
             let myCount = 0;
             const countsByProfile = new Map();
-
             state.claimedTiles.forEach((data) => {
                 if (data.profileId) {
                     countsByProfile.set(data.profileId, (countsByProfile.get(data.profileId) || 0) + 1);
@@ -350,70 +561,47 @@
                 }
             });
 
-            // Header Active User Button
             dom.activeUserAvatar.textContent = activeProfile.name.charAt(0).toUpperCase();
             dom.activeUserAvatar.style.backgroundColor = activeProfile.color;
             dom.activeUserName.textContent = activeProfile.name;
-            dom.activeUserBadgeCount.textContent = myCount;
+            dom.activeUserBadgeCount.textContent = '🏆 ' + myCount;
+            if (lastAvatarKey !== activeProfile.id) {
+                if (lastAvatarKey) { dom.activeUserAvatar.classList.remove('avatar-bounce'); void dom.activeUserAvatar.offsetWidth; dom.activeUserAvatar.classList.add('avatar-bounce'); }
+                lastAvatarKey = activeProfile.id;
+            }
 
-            // Stats & Tabs for Active User
             dom.statMine.textContent = myCount.toLocaleString();
-            dom.statMyLabel.textContent = `${activeProfile.name}'s Tiles`;
+            dom.statMyLabel.textContent = `⭐ ${activeProfile.name}'s Tiles`;
             dom.statMyDot.style.backgroundColor = activeProfile.color;
             dom.tabMineCount.textContent = `(${myCount})`;
             dom.sessionUidDisplay.textContent = `User: ${activeProfile.name}`;
 
-            // Render User Roster inside Modal
-            const usersList = Array.from(state.users.values());
-            dom.userRosterList.innerHTML = usersList.map(user => {
+            dom.userRosterList.innerHTML = Array.from(state.users.values()).map(user => {
                 const isSelected = user.id === activeProfile.id;
                 const count = countsByProfile.get(user.id) || 0;
                 const canDelete = state.adminMode && !user.isDefault;
-
                 return `
-                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all ${isSelected ? 'bg-blue-50/70 border-blue-300 shadow-xs' : 'bg-white border-slate-200 hover:border-slate-300'}">
+                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl border transition-all ${isSelected ? 'bg-blue-50/70 border-blue-300 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'}">
                         <button type="button" data-select-user="${escapeHtml(user.id)}" class="flex-1 flex items-center gap-3 text-left min-w-0">
-                            <span class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" style="background-color: ${escapeHtml(user.color)}">
-                                ${escapeHtml(user.name.charAt(0).toUpperCase())}
-                            </span>
+                            <span class="w-10 h-10 rounded-full text-white font-bold text-sm flex items-center justify-center shrink-0 shadow" style="background-color:${escapeHtml(user.color)}">${escapeHtml(user.name.charAt(0).toUpperCase())}</span>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-1.5">
                                     <span class="text-sm font-bold text-slate-900 truncate">${escapeHtml(user.name)}</span>
-                                    ${isSelected ? '<span class="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[10px] font-bold">Active</span>' : ''}
+                                    ${isSelected ? '<span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">You</span>' : ''}
                                 </div>
-                                <div class="text-xs text-slate-500 font-mono">${count} tile(s) claimed</div>
+                                <div class="text-xs text-slate-500">${count === 0 ? 'No tiles yet 🌱' : `${count} tile${count === 1 ? '' : 's'} 🏆`}</div>
                             </div>
                         </button>
                         ${canDelete ? `
-                            <button type="button" data-delete-user="${escapeHtml(user.id)}" title="Remove custom user"
-                                class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </button>
-                        ` : ''}
-                    </div>
-                `;
+                            <button type="button" data-delete-user="${escapeHtml(user.id)}" title="Remove custom user" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>` : ''}
+                    </div>`;
             }).join('');
         }
 
-        function updateStatsAndActivity() {
-            const claimedCount = state.claimedTiles.size;
-            const availableCount = TOTAL_TILES - claimedCount;
-            const percent = ((claimedCount / TOTAL_TILES) * 100).toFixed(1);
+        function renderActivityFeed() {
             const activeProfile = getActiveProfile();
-
-            dom.statAvailable.textContent = availableCount.toLocaleString();
-            dom.statClaimed.textContent = claimedCount.toLocaleString();
-            dom.statPercent.textContent = `${percent}%`;
-            dom.progressBar.style.width = `${percent}%`;
-
-            dom.tabAvailCount.textContent = `(${availableCount})`;
-            dom.tabClaimedCount.textContent = `(${claimedCount})`;
-
-            updateUserModeUI();
-
-            // Update Activity Feed (Sort in memory by timestamp descending)
             const entries = Array.from(state.claimedTiles.entries())
                 .map(([tileId, data]) => ({ tileId, ...data }))
                 .sort((a, b) => (b.claimedAtMs || 0) - (a.claimedAtMs || 0))
@@ -422,302 +610,362 @@
             if (entries.length === 0) {
                 dom.activityFeed.innerHTML = `
                     <div class="text-center py-8 text-xs text-slate-400">
-                        No tiles claimed yet. Click any open number to claim it!
-                    </div>
-                `;
+                        <div class="text-3xl mb-2">👀</div>It's quiet in here…<br>Be the first to claim a tile!
+                    </div>`;
                 return;
             }
-
             dom.activityFeed.innerHTML = entries.map(item => {
                 const isMine = item.profileId === activeProfile.id;
-                const timeLabel = formatRelativeTime(item.claimedAtMs);
-                const badgeColor = item.color || '#2563eb';
                 return `
-                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                    <div class="feed-item flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                         <div class="flex items-center gap-2 min-w-0">
-                            <span class="px-2 py-1 rounded-lg font-mono font-bold text-[11px] shrink-0 text-white" style="background-color: ${escapeHtml(badgeColor)}">
-                                #${item.tileId}
-                            </span>
+                            <span class="px-2 py-1 rounded-lg font-mono font-bold text-[11px] shrink-0 text-white" style="background-color:${escapeHtml(item.color || '#2563eb')}">#${item.tileId}</span>
                             <div class="truncate">
                                 <span class="font-semibold text-slate-800">${escapeHtml(item.nickname || 'User')}</span>
-                                <span class="text-slate-500">${isMine ? ' (You)' : ''} claimed tile</span>
+                                <span class="text-slate-500">${isMine ? ' (you) 🎉' : ''} grabbed a tile</span>
                             </div>
                         </div>
-                        <span class="text-[10px] text-slate-400 shrink-0 font-mono">${timeLabel}</span>
-                    </div>
-                `;
+                        <span class="text-[10px] text-slate-400 shrink-0 font-mono">${formatRelativeTime(item.claimedAtMs)}</span>
+                    </div>`;
             }).join('');
         }
 
+        function updateStatsAndActivity() {
+            const claimedCount = state.claimedTiles.size;
+            const availableCount = TOTAL_TILES - claimedCount;
+            const percent = ((claimedCount / TOTAL_TILES) * 100).toFixed(1);
+
+            dom.statAvailable.textContent = availableCount.toLocaleString();
+            dom.statClaimed.textContent = claimedCount.toLocaleString();
+            dom.statPercent.textContent = `${percent}%`;
+            dom.progressBar.style.width = `${percent}%`;
+            dom.tabAvailCount.textContent = `(${availableCount})`;
+            dom.tabClaimedCount.textContent = `(${claimedCount})`;
+            updateProgressMessage(claimedCount);
+            updateUserModeUI();
+            renderActivityFeed();
+        }
+
+        function refreshEverything() {
+            refreshAllClaimedTileVisuals();
+            applyFiltersAndVisibility();
+            updateStatsAndActivity();
+        }
+
         // ==========================================
-        // 4. FIREBASE REAL-TIME MULTIPLAYER SYNC
+        // 5. MULTIPLAYER SYNC (Firebase) with local fallback
         // ==========================================
         async function initMultiplayer() {
             renderColorSwatches();
             updateUserModeUI();
 
-            if (!firebaseConfig) {
-                enableLocalDemoFallback("Local Mode (No Cloud Config)");
-                return;
-            }
+            if (!firebaseConfig) { enableLocalDemoFallback('Local Mode'); return; }
 
             try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+                const [appMod, authMod, fsMod] = await Promise.all([
+                    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+                    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+                    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+                ]);
+                fb = { ...appMod, ...authMod, ...fsMod };
 
-                // RULE 3: Authenticate FIRST before any Firestore query
+                const app = fb.initializeApp(firebaseConfig);
+                auth = fb.getAuth(app);
+                db = fb.getFirestore(app);
+
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    await fb.signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    await signInAnonymously(auth);
+                    await fb.signInAnonymously(auth);
                 }
-
                 currentUser = auth.currentUser;
-                if (!currentUser) throw new Error("Authentication returned null user");
+                if (!currentUser) throw new Error('Authentication returned null user');
+                setConnectionBadge('live', 'Live Sync');
 
-                setConnectionBadge('live', 'Live Sync Active');
-
-                // Sync Shared User Roster (RULE 1 & RULE 2)
-                const usersColRef = collection(db, 'artifacts', appId, 'public', 'data', 'grid_users');
-                onSnapshot(
-                    usersColRef,
-                    (snapshot) => {
-                        snapshot.docChanges().forEach((change) => {
+                fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'public', 'data', 'grid_users'), (snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'removed') {
+                            state.users.delete(change.doc.id);
+                            if (state.selectedProfileId === change.doc.id) state.selectedProfileId = DEFAULT_USERS[0].id;
+                        } else {
                             const data = change.doc.data();
-                            if (change.type === 'added' || change.type === 'modified') {
-                                state.users.set(change.doc.id, {
-                                    id: change.doc.id,
-                                    name: data.name || 'User',
-                                    color: data.color || '#2563eb',
-                                    isDefault: Boolean(data.isDefault)
-                                });
-                            } else if (change.type === 'removed') {
-                                state.users.delete(change.doc.id);
-                                if (state.selectedProfileId === change.doc.id) {
-                                    state.selectedProfileId = DEFAULT_USERS[0].id;
-                                }
-                            }
+                            state.users.set(change.doc.id, { id: change.doc.id, name: data.name || 'User', color: data.color || '#2563eb', isDefault: Boolean(data.isDefault) });
+                        }
+                    });
+                    loadProfileChoice();
+                    updateUserModeUI();
+                }, (err) => console.error('User roster sync error:', err));
+
+                fb.onSnapshot(fb.collection(db, 'artifacts', appId, 'public', 'data', 'claimed_tiles'), (snapshot) => {
+                    const changed = new Set();
+                    snapshot.docChanges().forEach((change) => {
+                        const tileId = parseInt(change.doc.id, 10);
+                        if (isNaN(tileId) || tileId < 1 || tileId > TOTAL_TILES) return;
+                        if (change.type === 'removed') {
+                            state.claimedTiles.delete(tileId);
+                            changed.add(tileId);
+                            return;
+                        }
+                        const data = change.doc.data();
+                        const claimedAtMs = data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.claimedAtMs || Date.now());
+                        const existing = state.claimedTiles.get(tileId);
+                        state.claimedTiles.set(tileId, {
+                            userId: data.userId, profileId: data.profileId || data.userId,
+                            nickname: data.nickname || 'User', color: data.color || '#2563eb', claimedAtMs
                         });
-                        updateUserModeUI();
-                    },
-                    (error) => console.error("User roster sync error:", error)
-                );
-
-                // RULE 1 & RULE 2: Strict public artifact path & simple collection query
-                const tilesColRef = collection(db, 'artifacts', appId, 'public', 'data', 'claimed_tiles');
-
-                onSnapshot(
-                    tilesColRef,
-                    (snapshot) => {
-                        const changedTileIds = new Set();
-
-                        snapshot.docChanges().forEach((change) => {
-                            const tileId = parseInt(change.doc.id, 10);
-                            if (isNaN(tileId) || tileId < 1 || tileId > TOTAL_TILES) return;
-
-                            if (change.type === 'added' || change.type === 'modified') {
-                                const data = change.doc.data();
-                                const claimedAtMs = data.claimedAt?.toMillis ? data.claimedAt.toMillis() : (data.claimedAtMs || Date.now());
-                                state.claimedTiles.set(tileId, {
-                                    userId: data.userId,
-                                    profileId: data.profileId || data.userId,
-                                    nickname: data.nickname || 'User',
-                                    color: data.color || '#2563eb',
-                                    claimedAtMs
-                                });
-                                changedTileIds.add(tileId);
-
-                                // Notify user of remote claims after initial load
-                                if (state.initialSyncComplete && change.type === 'added' && data.userId !== currentUser.uid) {
-                                    showToast(`${data.nickname || 'Someone'} claimed Tile #${tileId}`, 'info');
-                                }
-                            } else if (change.type === 'removed') {
-                                state.claimedTiles.delete(tileId);
-                                changedTileIds.add(tileId);
-                            }
-                        });
-
-                        // Update only modified tiles in DOM
-                        changedTileIds.forEach(id => updateSingleTileVisual(id));
-                        applyFiltersAndVisibility();
-                        updateStatsAndActivity();
-                        state.initialSyncComplete = true;
-                    },
-                    (error) => {
-                        console.error("Firestore sync error:", error);
-                        setConnectionBadge('error', 'Sync Error');
-                        showToast("Connection issue with live database.", "error");
-                    }
-                );
+                        changed.add(tileId);
+                        if (state.initialSyncComplete && change.type === 'added' && !existing && data.userId !== currentUser.uid) {
+                            showToast(`${data.nickname || 'Someone'} just grabbed #${tileId} 👀`, 'info');
+                            setTimeout(() => animateTile(tileId, 'tile-pop'), 0);
+                        }
+                    });
+                    changed.forEach(updateSingleTileVisual);
+                    applyFiltersAndVisibility();
+                    updateStatsAndActivity();
+                    state.initialSyncComplete = true;
+                }, (err) => {
+                    console.error('Firestore sync error:', err);
+                    setConnectionBadge('error', 'Sync Error');
+                    showToast('Connection issue with the live database.', 'error');
+                });
             } catch (err) {
-                console.error("Initialization error:", err);
-                enableLocalDemoFallback("Offline Mode");
+                console.error('Initialization error:', err);
+                enableLocalDemoFallback('Offline Mode');
             }
         }
 
         function enableLocalDemoFallback(label) {
             isOfflineFallback = true;
+            db = null;
             currentUser = { uid: 'local-' + crypto.randomUUID().slice(0, 8) };
-            setConnectionBadge('offline', label);
+            setConnectionBadge('offline', label + ' · saved in this browser');
+            loadLocal();
+            loadProfileChoice();
             state.initialSyncComplete = true;
+            refreshEverything();
         }
 
+        const tileDoc = (id) => fb.doc(db, 'artifacts', appId, 'public', 'data', 'claimed_tiles', String(id));
+        const userDoc = (id) => fb.doc(db, 'artifacts', appId, 'public', 'data', 'grid_users', id);
+        const isOnline = () => !isOfflineFallback && db && currentUser && fb;
+
         // ==========================================
-        // 5. TILE CLAIM, UNCLAIM, USER MANAGEMENT & BATCH RESET
+        // 6. ACTIONS
         // ==========================================
         async function claimTile(tileId) {
             if (state.claimedTiles.has(tileId)) return;
-
             const activeProfile = getActiveProfile();
-            const optimisticData = {
-                userId: currentUser.uid,
-                profileId: activeProfile.id,
-                nickname: activeProfile.name,
-                color: activeProfile.color,
-                claimedAtMs: Date.now()
-            };
+            const before = state.claimedTiles.size;
 
-            // Optimistic UI update for zero-latency responsiveness
-            state.claimedTiles.set(tileId, optimisticData);
+            state.claimedTiles.set(tileId, {
+                userId: currentUser.uid, profileId: activeProfile.id,
+                nickname: activeProfile.name, color: activeProfile.color, claimedAtMs: Date.now()
+            });
             updateSingleTileVisual(tileId);
             applyFiltersAndVisibility();
             updateStatsAndActivity();
-            showToast(`${activeProfile.name} claimed Tile #${tileId}!`, 'success');
+            saveLocal();
 
-            if (isOfflineFallback || !db || !currentUser) return;
+            const btn = animateTile(tileId, 'tile-pop');
+            burstConfetti(btn, activeProfile.color);
+            showToast(`${cheer()} #${tileId} is ${activeProfile.name}'s`, 'success');
 
+            // Milestone celebration
+            const after = state.claimedTiles.size;
+            const bucket = (n) => Math.floor((n * 4) / TOTAL_TILES);
+            if (bucket(after) > bucket(before)) {
+                const pct = bucket(after) * 25;
+                setTimeout(() => {
+                    showToast(pct === 100 ? '🏁 Board complete! What a team!' : `🎉 ${pct}% of the board is claimed!`, 'party');
+                    burstConfetti(btn, '#7c3aed', 40);
+                }, 600);
+            }
+
+            if (!isOnline()) return;
             try {
-                const tileDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'claimed_tiles', String(tileId));
-                await setDoc(tileDocRef, {
-                    tileId,
-                    userId: currentUser.uid,
-                    profileId: activeProfile.id,
-                    nickname: activeProfile.name,
-                    color: activeProfile.color,
-                    claimedAt: serverTimestamp(),
-                    claimedAtMs: Date.now()
+                await fb.setDoc(tileDoc(tileId), {
+                    tileId, userId: currentUser.uid, profileId: activeProfile.id,
+                    nickname: activeProfile.name, color: activeProfile.color,
+                    claimedAt: fb.serverTimestamp(), claimedAtMs: Date.now()
                 });
             } catch (err) {
-                console.error("Failed to claim tile:", err);
-                // Rollback optimistic update on failure
+                console.error('Failed to claim tile:', err);
                 state.claimedTiles.delete(tileId);
                 updateSingleTileVisual(tileId);
                 applyFiltersAndVisibility();
                 updateStatsAndActivity();
-                showToast(`Could not lock Tile #${tileId}. Please try again.`, 'error');
+                showToast(`😬 Couldn't lock #${tileId}. Try again!`, 'error');
             }
+        }
+
+        async function unclaimTile(tileId) {
+            const data = state.claimedTiles.get(tileId);
+            if (!data) return;
+            const ok = await showConfirm({
+                title: `Unlock tile #${tileId}?`,
+                message: `It's currently held by ${data.nickname || 'someone'}. It will become available again.`,
+                confirmText: 'Unlock', icon: '🔓'
+            });
+            if (!ok) return;
+
+            state.claimedTiles.delete(tileId);
+            updateSingleTileVisual(tileId);
+            applyFiltersAndVisibility();
+            updateStatsAndActivity();
+            saveLocal();
+            showToast(`🔓 Tile #${tileId} is open again`, 'info');
+
+            if (!isOnline()) return;
+            try {
+                await fb.deleteDoc(tileDoc(tileId));
+            } catch (err) {
+                console.error('Failed to unclaim tile:', err);
+                state.claimedTiles.set(tileId, data);
+                updateSingleTileVisual(tileId);
+                applyFiltersAndVisibility();
+                updateStatsAndActivity();
+                showToast('Could not unlock that tile.', 'error');
+            }
+        }
+
+        async function resetAllTiles() {
+            const total = state.claimedTiles.size;
+            if (total === 0) { showToast('The board is already empty 🧼', 'info'); return; }
+            const ok = await showConfirm({
+                title: 'Reset the whole board?',
+                message: `This releases all ${total.toLocaleString()} claimed tile(s) for everyone. It cannot be undone.`,
+                confirmText: 'Yes, reset it', icon: '💣'
+            });
+            if (!ok) return;
+
+            const ids = Array.from(state.claimedTiles.keys());
+            if (isOnline()) {
+                try {
+                    for (let i = 0; i < ids.length; i += 400) {
+                        const batch = fb.writeBatch(db);
+                        ids.slice(i, i + 400).forEach(id => batch.delete(tileDoc(id)));
+                        await batch.commit();
+                    }
+                } catch (err) {
+                    console.error('Reset failed:', err);
+                    showToast('Reset failed. Some tiles may remain.', 'error');
+                    return;
+                }
+            }
+            state.claimedTiles.clear();
+            refreshEverything();
+            saveLocal();
+            showToast('🧼 Fresh start! Board cleared.', 'success');
         }
 
         async function addUserProfile(name, color) {
             const cleanName = name.trim();
             if (!cleanName) return;
-
             const newId = 'user_' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.floor(100 + Math.random() * 900);
-            const newProfile = {
-                id: newId,
-                name: cleanName,
-                color: color || AVATAR_COLORS[0],
-                isDefault: false
-            };
-
-            state.users.set(newId, newProfile);
+            const profile = { id: newId, name: cleanName, color: color || AVATAR_COLORS[0], isDefault: false };
+            state.users.set(newId, profile);
             selectUserProfile(newId);
+            saveLocal();
 
-            if (isOfflineFallback || !db || !currentUser) return;
-
+            if (!isOnline()) return;
             try {
-                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'grid_users', newId);
-                await setDoc(userDocRef, {
-                    name: newProfile.name,
-                    color: newProfile.color,
-                    isDefault: false,
-                    createdAt: serverTimestamp()
-                });
+                await fb.setDoc(userDoc(newId), { name: profile.name, color: profile.color, isDefault: false, createdAt: fb.serverTimestamp() });
             } catch (err) {
-                console.error("Failed to sync new user:", err);
-                showToast("Saved user locally (sync issue).", "error");
+                console.error('Failed to sync new user:', err);
+                showToast('Saved locally (sync issue).', 'error');
             }
         }
 
         async function deleteUserProfile(profileId) {
             const user = state.users.get(profileId);
             if (!user || user.isDefault) return;
-
             state.users.delete(profileId);
-            if (state.selectedProfileId === profileId) {
-                selectUserProfile(DEFAULT_USERS[0].id);
-            } else {
-                updateUserModeUI();
-            }
-            showToast(`Removed user "${user.name}"`, 'info');
+            if (state.selectedProfileId === profileId) selectUserProfile(DEFAULT_USERS[0].id);
+            else updateUserModeUI();
+            saveLocal();
+            showToast(`Removed ${user.name} 👋`, 'info');
 
-            if (isOfflineFallback || !db || !currentUser) return;
-
-            try {
-                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'grid_users', profileId);
-                await deleteDoc(userDocRef);
-            } catch (err) {
-                console.error("Failed to delete user:", err);
-            }
+            if (!isOnline()) return;
+            try { await fb.deleteDoc(userDoc(profileId)); } catch (err) { console.error('Failed to delete user:', err); }
         }
 
         function selectUserProfile(profileId) {
             if (!state.users.has(profileId)) return;
             state.selectedProfileId = profileId;
-            const profile = getActiveProfile();
-
-            refreshAllClaimedTileVisuals();
-            applyFiltersAndVisibility();
-            updateStatsAndActivity();
+            saveProfileChoice();
+            refreshEverything();
             dom.userModeModal.classList.add('hidden');
-            showToast(`Switched to User Mode: ${profile.name}`, 'info');
+            showToast(`👋 Hey ${getActiveProfile().name}, you're up!`, 'info');
         }
 
-        async function unclaimTile(tileId) {
-// ... existing code ...
         // ==========================================
-        // 6. EVENT LISTENERS & INTERACTIONS
+        // 7. NAVIGATION HELPERS
         // ==========================================
-        function renderColorSwatches() {
-            dom.colorSwatches.innerHTML = AVATAR_COLORS.map(color => `
-                <button type="button" data-color="${color}"
-                    class="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${state.selectedNewColor === color ? 'border-slate-900 scale-110' : 'border-transparent'}"
-                    style="background-color: ${color}" aria-label="Select color ${color}"></button>
-            `).join('');
+        function setFilter(filter) {
+            state.filter = filter;
+            dom.filterTabs.forEach(tab => {
+                const active = tab.dataset.filter === filter;
+                tab.classList.toggle('bg-white', active);
+                tab.classList.toggle('text-slate-900', active);
+                tab.classList.toggle('shadow-sm', active);
+                tab.classList.toggle('text-slate-600', !active);
+                tab.setAttribute('aria-selected', String(active));
+            });
+            applyFiltersAndVisibility();
         }
 
+        function clearSearch() {
+            dom.searchInput.value = '';
+            state.searchQuery = '';
+            dom.clearSearchBtn.classList.add('hidden');
+        }
+
+        function focusTile(id) {
+            const btn = tileElements[id];
+            if (btn.classList.contains('hidden')) {
+                clearSearch();
+                state.hideClaimed = false;
+                dom.hideClaimedToggle.checked = false;
+                setFilter('all');
+            }
+            btn.scrollIntoView({ behavior: REDUCED_MOTION ? 'auto' : 'smooth', block: 'center' });
+            animateTile(id, 'tile-flash');
+        }
+
+        function jumpToTile() {
+            const n = parseInt(dom.searchInput.value, 10);
+            if (isNaN(n) || n < 1 || n > TOTAL_TILES) {
+                showToast(`Type a number between 1 and ${TOTAL_TILES.toLocaleString()} 🔢`, 'error');
+                return;
+            }
+            focusTile(n);
+        }
+
+        function surpriseMe() {
+            const open = [];
+            for (let i = 1; i <= TOTAL_TILES; i++) if (!state.claimedTiles.has(i)) open.push(i);
+            if (!open.length) { showToast('Every tile is taken! 🏁', 'info'); return; }
+            const id = open[Math.floor(Math.random() * open.length)];
+            focusTile(id);
+            showToast(`🎲 How about #${id}?`, 'info');
+        }
+
+        // ==========================================
+        // 8. EVENT LISTENERS
+        // ==========================================
         function setupEventListeners() {
-            // User Mode Modal Open / Close
-            dom.userModeBtn.addEventListener('click', () => {
-                updateUserModeUI();
-                dom.userModeModal.classList.remove('hidden');
-            });
+            dom.userModeBtn.addEventListener('click', () => { updateUserModeUI(); dom.userModeModal.classList.remove('hidden'); });
+            dom.closeUserModalBtn.addEventListener('click', () => dom.userModeModal.classList.add('hidden'));
+            dom.userModeModal.addEventListener('click', (e) => { if (e.target === dom.userModeModal) dom.userModeModal.classList.add('hidden'); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') dom.userModeModal.classList.add('hidden'); });
 
-            dom.closeUserModalBtn.addEventListener('click', () => {
-                dom.userModeModal.classList.add('hidden');
-            });
-
-            dom.userModeModal.addEventListener('click', (e) => {
-                if (e.target === dom.userModeModal) {
-                    dom.userModeModal.classList.add('hidden');
-                }
-            });
-
-            // Select or Delete User in Roster
             dom.userRosterList.addEventListener('click', (e) => {
-                const deleteBtn = e.target.closest('button[data-delete-user]');
-                if (deleteBtn) {
-                    deleteUserProfile(deleteBtn.dataset.deleteUser);
-                    return;
-                }
-                const selectBtn = e.target.closest('button[data-select-user]');
-                if (selectBtn) {
-                    selectUserProfile(selectBtn.dataset.selectUser);
-                }
+                const del = e.target.closest('button[data-delete-user]');
+                if (del) { deleteUserProfile(del.dataset.deleteUser); return; }
+                const sel = e.target.closest('button[data-select-user]');
+                if (sel) selectUserProfile(sel.dataset.selectUser);
             });
 
-            // Color Swatch Selection
             dom.colorSwatches.addEventListener('click', (e) => {
                 const swatch = e.target.closest('button[data-color]');
                 if (!swatch) return;
@@ -725,46 +973,78 @@
                 renderColorSwatches();
             });
 
-            // Add New User Form Submit
+            dom.newUserNameInput.addEventListener('input', updateNewUserPreview);
             dom.addUserForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const name = dom.newUserNameInput.value.trim();
                 if (!name) return;
                 addUserProfile(name, state.selectedNewColor);
                 dom.newUserNameInput.value = '';
+                updateNewUserPreview();
             });
 
-            // Event Delegation on Tile Grid (Single listener for all 1,695 buttons)
+            // Single delegated listener for all tiles
             dom.tileGrid.addEventListener('click', (e) => {
-// ... existing code ...
-            // Reset Filters Button inside Empty State
+                const btn = e.target.closest('button[data-tile]');
+                if (!btn) return;
+                const id = parseInt(btn.dataset.tile, 10);
+                if (state.claimedTiles.has(id)) {
+                    if (state.adminMode) unclaimTile(id);
+                    else showToast(`#${id} is already ${state.claimedTiles.get(id).nickname}'s 🔒`, 'info');
+                } else {
+                    claimTile(id);
+                }
+            });
+
+            // Search / jump
+            dom.searchInput.addEventListener('input', () => {
+                state.searchQuery = dom.searchInput.value;
+                dom.clearSearchBtn.classList.toggle('hidden', state.searchQuery === '');
+                applyFiltersAndVisibility();
+            });
+            dom.searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') jumpToTile(); });
+            dom.clearSearchBtn.addEventListener('click', () => { clearSearch(); applyFiltersAndVisibility(); dom.searchInput.focus(); });
+            dom.jumpBtn.addEventListener('click', jumpToTile);
+            dom.surpriseBtn.addEventListener('click', surpriseMe);
+
+            // Filters
+            dom.filterTabs.forEach(tab => tab.addEventListener('click', () => setFilter(tab.dataset.filter)));
+            dom.hideClaimedToggle.addEventListener('change', () => { state.hideClaimed = dom.hideClaimedToggle.checked; applyFiltersAndVisibility(); });
             dom.resetFiltersBtn.addEventListener('click', () => {
-                dom.searchInput.value = '';
-                state.searchQuery = '';
-                dom.clearSearchBtn.classList.add('hidden');
+                clearSearch();
                 state.hideClaimed = false;
                 dom.hideClaimedToggle.checked = false;
-                dom.filterTabs[0].click();
+                setFilter('all');
             });
 
-            // Admin Mode Toggle
+            // Admin
             dom.adminToggleBtn.addEventListener('click', () => {
                 state.adminMode = !state.adminMode;
                 dom.adminBar.classList.toggle('hidden', !state.adminMode);
                 document.body.classList.toggle('admin-active', state.adminMode);
-
-                if (state.adminMode) {
-                    dom.adminToggleBtn.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-700');
-                    dom.adminBtnLabel.textContent = 'Exit Admin';
-                } else {
-                    dom.adminToggleBtn.classList.remove('bg-rose-50', 'border-rose-300', 'text-rose-700');
-                    dom.adminBtnLabel.textContent = 'Admin';
-                }
-
-                // Update interactivity of claimed tiles & user roster delete buttons
-                state.claimedTiles.forEach((_, tileId) => updateSingleTileVisual(tileId));
+                dom.adminToggleBtn.classList.toggle('bg-rose-50', state.adminMode);
+                dom.adminToggleBtn.classList.toggle('border-rose-300', state.adminMode);
+                dom.adminToggleBtn.classList.toggle('text-rose-700', state.adminMode);
+                dom.adminBtnLabel.textContent = state.adminMode ? 'Exit Admin' : 'Admin';
+                refreshAllClaimedTileVisuals();
                 updateUserModeUI();
+                showToast(state.adminMode ? '🛠️ Admin mode on' : 'Admin mode off', 'info');
             });
+            dom.resetAllBtn.addEventListener('click', resetAllTiles);
 
-            // Reset All Confirmation Modal
-// ... existing code ...
+            // Keep "x ago" labels fresh
+            setInterval(renderActivityFeed, 30000);
+        }
+
+        // ==========================================
+        // 9. BOOT
+        // ==========================================
+        buildTileGrid();
+        setupEventListeners();
+        loadProfileChoice();
+        applyFiltersAndVisibility();
+        updateStatsAndActivity();
+        initMultiplayer();
+    </script>
+</body>
+</html>
